@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 import { Box, ListItemButton, Typography } from '@mui/material';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import { devicesActions } from '../store';
 import { formatTime, getStatusColor } from '../common/util/formatter';
 import { speedFromKnots } from '../common/util/converter';
@@ -44,6 +45,17 @@ const useStyles = makeStyles()((theme) => ({
     textAlign: 'right',
     color: theme.palette.text.secondary,
   },
+  ignitionCell: {
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+  },
+  voltageCell: {
+    flexShrink: 0,
+    width: 58,
+    textAlign: 'right',
+    color: theme.palette.text.secondary,
+  },
   selected: {
     backgroundColor: theme.palette.action.selected,
   },
@@ -63,6 +75,12 @@ const DeviceRow = ({ devices, index, style }) => {
   const lastSeen = item.lastUpdate ? formatTime(item.lastUpdate, 'time') : '--';
   const speed =
     position?.speed != null ? `${speedFromKnots(position.speed, 'kmh').toFixed(1)} km/h` : '--';
+
+  const ignition = position?.attributes?.ignition;
+
+  const powerRaw = position?.attributes?.power;
+  const hasPower = powerRaw != null && Number.isFinite(Number(powerRaw));
+  const voltageText = hasPower ? `${Number(powerRaw).toFixed(2)} V` : null;
 
   return (
     <div style={style}>
@@ -91,6 +109,21 @@ const DeviceRow = ({ devices, index, style }) => {
               {speed}
             </Typography>
           </Box>
+          {ignition != null && (
+            <Box className={classes.ignitionCell}>
+              <VpnKeyIcon
+                fontSize="small"
+                color={ignition ? 'success' : 'disabled'}
+              />
+            </Box>
+          )}
+          {voltageText != null && (
+            <Box className={classes.voltageCell}>
+              <Typography variant="caption" noWrap>
+                {voltageText}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </ListItemButton>
     </div>
