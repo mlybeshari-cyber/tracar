@@ -1,9 +1,11 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 import { Box, ListItemButton, Typography } from '@mui/material';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
+import { useTheme } from '@mui/material/styles';
+import KeyIcon from '@mui/icons-material/Key';
+import KeyOffIcon from '@mui/icons-material/KeyOff';
 import { devicesActions } from '../store';
-import { formatTime, getStatusColor } from '../common/util/formatter';
+import { formatTime, getDeviceUiStatus } from '../common/util/formatter';
 import { speedFromKnots } from '../common/util/converter';
 import { useAdministrator } from '../common/util/permissions';
 
@@ -13,21 +15,6 @@ const useStyles = makeStyles()((theme) => ({
     alignItems: 'center',
     width: '100%',
     gap: theme.spacing(1),
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: '50%',
-    flexShrink: 0,
-  },
-  success: {
-    backgroundColor: theme.palette.success.main,
-  },
-  error: {
-    backgroundColor: theme.palette.error.main,
-  },
-  neutral: {
-    backgroundColor: theme.palette.neutral.main,
   },
   nameCell: {
     flex: 1,
@@ -47,12 +34,12 @@ const useStyles = makeStyles()((theme) => ({
   },
   ignitionCell: {
     flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center',
+    width: 14,
+    textAlign: 'center',
   },
   voltageCell: {
     flexShrink: 0,
-    width: 58,
+    width: 56,
     textAlign: 'right',
     color: theme.palette.text.secondary,
   },
@@ -61,8 +48,69 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
+const StatusIndicator = ({ status, course }) => {
+  const theme = useTheme();
+  const baseCircle = {
+    width: 14,
+    height: 14,
+    borderRadius: '50%',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
+  switch (status) {
+    case 'pending':
+      return (
+        <Box
+          sx={{
+            width: 0,
+            height: 0,
+            borderLeft: '7px solid transparent',
+            borderRight: '7px solid transparent',
+            borderBottom: `13px solid ${theme.palette.warning.main}`,
+            flexShrink: 0,
+          }}
+        />
+      );
+    case 'parking':
+      return (
+        <Box sx={{ ...baseCircle, bgcolor: 'error.main' }}>
+          <Typography
+            component="span"
+            sx={{ color: 'white', fontSize: '8px', lineHeight: 1, fontWeight: 'bold' }}
+          >
+            P
+          </Typography>
+        </Box>
+      );
+    case 'idle':
+      return <Box sx={{ ...baseCircle, bgcolor: 'info.main' }} />;
+    case 'moving':
+      return (
+        <Box
+          sx={{
+            ...baseCircle,
+            bgcolor: 'success.main',
+            ...(course != null ? { transform: `rotate(${course}deg)` } : {}),
+          }}
+        >
+          {course != null && (
+            <Typography component="span" sx={{ color: 'white', fontSize: '9px', lineHeight: 1 }}>
+              ↑
+            </Typography>
+          )}
+        </Box>
+      );
+    case 'offline':
+    default:
+      return <Box sx={{ ...baseCircle, bgcolor: 'grey.500' }} />;
+  }
+};
+
 const DeviceRow = ({ devices, index, style }) => {
-  const { classes, cx } = useStyles();
+  const { classes } = useStyles();
   const dispatch = useDispatch();
 
   const admin = useAdministrator();
@@ -71,16 +119,16 @@ const DeviceRow = ({ devices, index, style }) => {
   const item = devices[index];
   const position = useSelector((state) => state.session.positions[item.id]);
 
-  const statusColor = getStatusColor(item.status);
+  const uiStatus = getDeviceUiStatus(item, position);
   const lastSeen = item.lastUpdate ? formatTime(item.lastUpdate, 'time') : '--';
   const speed =
     position?.speed != null ? `${speedFromKnots(position.speed, 'kmh').toFixed(1)} km/h` : '--';
 
   const ignition = position?.attributes?.ignition;
-
   const powerRaw = position?.attributes?.power;
-  const hasPower = powerRaw != null && Number.isFinite(Number(powerRaw));
-  const voltageText = hasPower ? `${Number(powerRaw).toFixed(2)} V` : null;
+  const powerNum = Number(powerRaw);
+  const hasPower = powerRaw !== undefined && powerRaw !== null && Number.isFinite(powerNum);
+  const voltageText = hasPower ? `${powerNum.toFixed(2)} V` : '';
 
   return (
     <div style={style}>
@@ -93,7 +141,7 @@ const DeviceRow = ({ devices, index, style }) => {
         sx={{ minHeight: 44, maxHeight: 44, py: 0, px: 1 }}
       >
         <Box className={classes.row}>
-          <Box className={cx(classes.statusDot, classes[statusColor])} />
+          <StatusIndicator status={uiStatus} course={position?.course} />
           <Box className={classes.nameCell}>
             <Typography variant="body2" noWrap>
               {item.name}
@@ -109,21 +157,21 @@ const DeviceRow = ({ devices, index, style }) => {
               {speed}
             </Typography>
           </Box>
-          {ignition != null && (
-            <Box className={classes.ignitionCell}>
-              <VpnKeyIcon
-                fontSize="small"
-                color={ignition ? 'success' : 'disabled'}
-              />
-            </Box>
-          )}
-          {voltageText != null && (
+          <Box className={classes.ignitionCell}>
+            {ignition === true && (
+              <KeyIcon sx={{ fontSize: 14, color: 'success.main', display: 'block' }} />
+            )}
+            {ignition === false && (
+              <KeyOffIcon sx={{ fontSize: 14, color: 'text.disabled', display: 'block' }} />
+            )}
+          </Box>
+          {voltageText ? (
             <Box className={classes.voltageCell}>
               <Typography variant="caption" noWrap>
                 {voltageText}
               </Typography>
             </Box>
-          )}
+          ) : null}
         </Box>
       </ListItemButton>
     </div>

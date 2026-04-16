@@ -150,6 +150,46 @@ export const getStatusColor = (status) => {
   }
 };
 
+const OFFLINE_THRESHOLD_MS = 10 * 60 * 1000;
+const IDLE_SPEED_THRESHOLD_KMH = 2;
+
+export const getDeviceUiStatus = (device, position) => {
+  const now = Date.now();
+  const lastUpdate = device.lastUpdate ? new Date(device.lastUpdate).getTime() : 0;
+  if (now - lastUpdate > OFFLINE_THRESHOLD_MS) {
+    return 'offline';
+  }
+  if (!position) {
+    return 'offline';
+  }
+  const sat = position.attributes?.sat;
+  if (sat !== undefined && sat !== null && sat < 3) {
+    return 'pending';
+  }
+  const ignition = position.attributes?.ignition;
+  const speedKmh = speedFromKnots(position.speed ?? 0, 'kmh');
+  if (ignition === false) {
+    return 'parking';
+  }
+  return speedKmh > IDLE_SPEED_THRESHOLD_KMH ? 'moving' : 'idle';
+};
+
+export const uiStatusToMapColor = (uiStatus) => {
+  switch (uiStatus) {
+    case 'moving':
+      return 'success';
+    case 'idle':
+      return 'info';
+    case 'parking':
+      return 'error';
+    case 'pending':
+      return 'warning';
+    case 'offline':
+    default:
+      return 'neutral';
+  }
+};
+
 export const getBatteryStatus = (batteryLevel) => {
   if (batteryLevel >= 70) {
     return 'success';

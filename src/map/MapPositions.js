@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { map } from './core/MapView';
-import { formatTime, getStatusColor } from '../common/util/formatter';
+import { formatTime, getDeviceUiStatus, uiStatusToMapColor } from '../common/util/formatter';
 import { mapIconKey } from './core/preloadImages';
 import { useAttributePreference } from '../common/util/preferences';
 import { useCatchCallback } from '../reactHelper';
@@ -33,6 +33,7 @@ const MapPositions = ({
 
   const createFeature = (devices, position, selectedPositionId) => {
     const device = devices[position.deviceId];
+    const uiStatus = getDeviceUiStatus(device, position);
     let showDirection;
     switch (directionType) {
       case 'none':
@@ -42,7 +43,8 @@ const MapPositions = ({
         showDirection = position.course > 0;
         break;
       default:
-        showDirection = selectedPositionId === position.id && position.course > 0;
+        showDirection =
+          (selectedPositionId === position.id || uiStatus === 'moving') && position.course > 0;
         break;
     }
     return {
@@ -51,7 +53,7 @@ const MapPositions = ({
       name: device.name,
       fixTime: formatTime(position.fixTime, 'seconds'),
       category: mapIconKey(device.category),
-      color: showStatus ? position.attributes.color || getStatusColor(device.status) : 'neutral',
+      color: showStatus ? position.attributes.color || uiStatusToMapColor(uiStatus) : 'neutral',
       rotation: position.course,
       direction: showDirection,
     };
