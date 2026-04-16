@@ -93,12 +93,14 @@ const StatusIndicator = ({ status, course }) => {
           sx={{
             ...baseCircle,
             bgcolor: 'success.main',
-            transform: `rotate(${course ?? 0}deg)`,
+            ...(course != null ? { transform: `rotate(${course}deg)` } : {}),
           }}
         >
-          <Typography component="span" sx={{ color: 'white', fontSize: '9px', lineHeight: 1 }}>
-            ↑
-          </Typography>
+          {course != null && (
+            <Typography component="span" sx={{ color: 'white', fontSize: '9px', lineHeight: 1 }}>
+              ↑
+            </Typography>
+          )}
         </Box>
       );
     case 'offline':
