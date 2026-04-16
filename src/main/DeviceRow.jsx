@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 import { Box, ListItemButton, Typography } from '@mui/material';
+import KeyIcon from '@mui/icons-material/Key';
 import { devicesActions } from '../store';
 import { formatTime, getStatusColor } from '../common/util/formatter';
 import { speedFromKnots } from '../common/util/converter';
@@ -44,6 +45,21 @@ const useStyles = makeStyles()((theme) => ({
     textAlign: 'right',
     color: theme.palette.text.secondary,
   },
+  ignitionCell: {
+    flexShrink: 0,
+    width: 20,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ignitionOn: {
+    color: theme.palette.success.main,
+    fontSize: 16,
+  },
+  ignitionOff: {
+    color: theme.palette.text.disabled,
+    fontSize: 16,
+  },
   selected: {
     backgroundColor: theme.palette.action.selected,
   },
@@ -63,6 +79,7 @@ const DeviceRow = ({ devices, index, style }) => {
   const lastSeen = item.lastUpdate ? formatTime(item.lastUpdate, 'time') : '--';
   const speed =
     position?.speed != null ? `${speedFromKnots(position.speed, 'kmh').toFixed(1)} km/h` : '--';
+  const ignition = position?.attributes?.ignition;
 
   return (
     <div style={style}>
@@ -91,6 +108,11 @@ const DeviceRow = ({ devices, index, style }) => {
               {speed}
             </Typography>
           </Box>
+          {ignition != null && (
+            <Box className={classes.ignitionCell}>
+              <KeyIcon className={ignition ? classes.ignitionOn : classes.ignitionOff} />
+            </Box>
+          )}
         </Box>
       </ListItemButton>
     </div>
