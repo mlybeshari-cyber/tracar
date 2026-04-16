@@ -150,10 +150,13 @@ export const getStatusColor = (status) => {
   }
 };
 
+const OFFLINE_THRESHOLD_MS = 10 * 60 * 1000;
+const IDLE_SPEED_THRESHOLD_KMH = 2;
+
 export const getDeviceUiStatus = (device, position) => {
   const now = Date.now();
   const lastUpdate = device.lastUpdate ? new Date(device.lastUpdate).getTime() : 0;
-  if (now - lastUpdate > 10 * 60 * 1000) {
+  if (now - lastUpdate > OFFLINE_THRESHOLD_MS) {
     return 'offline';
   }
   if (!position) {
@@ -169,9 +172,9 @@ export const getDeviceUiStatus = (device, position) => {
     return 'parking';
   }
   if (ignition === true) {
-    return speedKmh > 2 ? 'moving' : 'idle';
+    return speedKmh > IDLE_SPEED_THRESHOLD_KMH ? 'moving' : 'idle';
   }
-  return speedKmh > 2 ? 'moving' : 'idle';
+  return speedKmh > IDLE_SPEED_THRESHOLD_KMH ? 'moving' : 'idle';
 };
 
 export const uiStatusToMapColor = (uiStatus) => {

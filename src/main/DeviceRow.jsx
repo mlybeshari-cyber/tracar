@@ -1,6 +1,9 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from 'tss-react/mui';
 import { Box, ListItemButton, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import KeyIcon from '@mui/icons-material/Key';
+import KeyOffIcon from '@mui/icons-material/KeyOff';
 import { devicesActions } from '../store';
 import { formatTime, getDeviceUiStatus } from '../common/util/formatter';
 import { speedFromKnots } from '../common/util/converter';
@@ -46,6 +49,7 @@ const useStyles = makeStyles()((theme) => ({
 }));
 
 const StatusIndicator = ({ status, course }) => {
+  const theme = useTheme();
   const baseCircle = {
     width: 14,
     height: 14,
@@ -65,7 +69,7 @@ const StatusIndicator = ({ status, course }) => {
             height: 0,
             borderLeft: '7px solid transparent',
             borderRight: '7px solid transparent',
-            borderBottom: '13px solid #f9a825',
+            borderBottom: `13px solid ${theme.palette.warning.main}`,
             flexShrink: 0,
           }}
         />
@@ -153,14 +157,10 @@ const DeviceRow = ({ devices, index, style }) => {
           </Box>
           <Box className={classes.ignitionCell}>
             {ignition === true && (
-              <Typography component="span" sx={{ fontSize: '12px', color: 'success.main' }}>
-                🔑
-              </Typography>
+              <KeyIcon sx={{ fontSize: 14, color: 'success.main', display: 'block' }} />
             )}
             {ignition === false && (
-              <Typography component="span" sx={{ fontSize: '12px', color: 'text.disabled' }}>
-                🔑
-              </Typography>
+              <KeyOffIcon sx={{ fontSize: 14, color: 'text.disabled', display: 'block' }} />
             )}
           </Box>
           {voltageText ? (
