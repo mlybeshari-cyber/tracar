@@ -171,9 +171,6 @@ export const getDeviceUiStatus = (device, position) => {
   if (ignition === false) {
     return 'parking';
   }
-  if (ignition === true) {
-    return speedKmh > IDLE_SPEED_THRESHOLD_KMH ? 'moving' : 'idle';
-  }
   return speedKmh > IDLE_SPEED_THRESHOLD_KMH ? 'moving' : 'idle';
 };
 

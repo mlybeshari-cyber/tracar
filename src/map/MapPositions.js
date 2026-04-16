@@ -40,11 +40,11 @@ const MapPositions = ({
         showDirection = false;
         break;
       case 'all':
-        showDirection = position.course >= 0;
+        showDirection = position.course > 0;
         break;
       default:
         showDirection =
-          (selectedPositionId === position.id || uiStatus === 'moving') && position.course >= 0;
+          (selectedPositionId === position.id || uiStatus === 'moving') && position.course > 0;
         break;
     }
     return {
