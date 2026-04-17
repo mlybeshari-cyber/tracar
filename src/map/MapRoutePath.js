@@ -2,8 +2,42 @@ import { useTheme } from '@mui/material/styles';
 import { useId, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { map } from './core/MapView';
-import getSpeedColor from '../common/util/colors';
+import { findFonts } from './core/mapUtil';
 import { useAttributePreference } from '../common/util/preferences';
+
+const GAP_MS = 120000;
+
+const splitIntoTrips = (positions, gapMs = GAP_MS) => {
+  const trips = [];
+  let current = [];
+  for (let i = 0; i < positions.length; i += 1) {
+    if (i === 0) {
+      current.push(positions[i]);
+    } else {
+      const prev = new Date(positions[i - 1].fixTime).getTime();
+      const curr = new Date(positions[i].fixTime).getTime();
+      if (curr - prev > gapMs) {
+        if (current.length > 0) trips.push(current);
+        current = [positions[i]];
+      } else {
+        current.push(positions[i]);
+      }
+    }
+  }
+  if (current.length > 0) trips.push(current);
+  return trips;
+};
+
+const formatStopDuration = (ms) => {
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h} h ${m} min`;
+  if (m > 0 && s > 0) return `${m} min ${s} sec`;
+  if (m > 0) return `${m} min`;
+  return `${s} sec`;
+};
 
 const MapRoutePath = ({ positions }) => {
   const id = useId();
@@ -24,18 +58,15 @@ const MapRoutePath = ({ positions }) => {
     return null;
   });
 
-  const mapLineWidth = useAttributePreference('mapLineWidth', 2);
+  const mapLineWidth = useAttributePreference('mapLineWidth', 4);
   const mapLineOpacity = useAttributePreference('mapLineOpacity', 1);
 
   useEffect(() => {
     map.addSource(id, {
       type: 'geojson',
       data: {
-        type: 'Feature',
-        geometry: {
-          type: 'LineString',
-          coordinates: [],
-        },
+        type: 'FeatureCollection',
+        features: [],
       },
     });
     map.addLayer({
@@ -53,7 +84,40 @@ const MapRoutePath = ({ positions }) => {
       },
     });
 
+    map.addSource(`${id}-stops`, {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: [],
+      },
+    });
+    map.addLayer({
+      source: `${id}-stops`,
+      id: `${id}-stops-label`,
+      type: 'symbol',
+      layout: {
+        'text-field': ['get', 'label'],
+        'text-font': findFonts(map),
+        'text-size': 12,
+        'text-allow-overlap': true,
+        'icon-allow-overlap': true,
+      },
+      paint: {
+        'text-color': '#ffffff',
+        'text-halo-color': 'rgba(0, 0, 0, 0)',
+        'text-halo-width': 0,
+        'text-background-color': 'rgba(0, 0, 0, 0.75)',
+        'text-background-opacity': 1,
+      },
+    });
+
     return () => {
+      if (map.getLayer(`${id}-stops-label`)) {
+        map.removeLayer(`${id}-stops-label`);
+      }
+      if (map.getSource(`${id}-stops`)) {
+        map.removeSource(`${id}-stops`);
+      }
       if (map.getLayer(`${id}-line`)) {
         map.removeLayer(`${id}-line`);
       }
@@ -64,29 +128,47 @@ const MapRoutePath = ({ positions }) => {
   }, []);
 
   useEffect(() => {
-    const minSpeed = positions.map((p) => p.speed).reduce((a, b) => Math.min(a, b), Infinity);
-    const maxSpeed = positions.map((p) => p.speed).reduce((a, b) => Math.max(a, b), -Infinity);
-    const features = [];
-    for (let i = 0; i < positions.length - 1; i += 1) {
-      features.push({
+    const lineColor = reportColor || theme.palette.geometry.main || '#673ab7';
+    const trips = splitIntoTrips(positions);
+
+    const lineFeatures = trips.map((trip) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: trip.map((p) => [p.longitude, p.latitude]),
+      },
+      properties: {
+        color: lineColor,
+        width: mapLineWidth,
+        opacity: mapLineOpacity,
+      },
+    }));
+
+    map.getSource(id)?.setData({
+      type: 'FeatureCollection',
+      features: lineFeatures,
+    });
+
+    const stopFeatures = [];
+    for (let i = 0; i < trips.length - 1; i += 1) {
+      const lastPos = trips[i][trips[i].length - 1];
+      const firstPos = trips[i + 1][0];
+      const gapMs = new Date(firstPos.fixTime).getTime() - new Date(lastPos.fixTime).getTime();
+      stopFeatures.push({
         type: 'Feature',
         geometry: {
-          type: 'LineString',
-          coordinates: [
-            [positions[i].longitude, positions[i].latitude],
-            [positions[i + 1].longitude, positions[i + 1].latitude],
-          ],
+          type: 'Point',
+          coordinates: [lastPos.longitude, lastPos.latitude],
         },
         properties: {
-          color: reportColor || getSpeedColor(positions[i + 1].speed, minSpeed, maxSpeed),
-          width: mapLineWidth,
-          opacity: mapLineOpacity,
+          label: `${i + 2} ⏱ ${formatStopDuration(gapMs)}`,
         },
       });
     }
-    map.getSource(id)?.setData({
+
+    map.getSource(`${id}-stops`)?.setData({
       type: 'FeatureCollection',
-      features,
+      features: stopFeatures,
     });
   }, [theme, positions, reportColor, mapLineWidth, mapLineOpacity]);
 
