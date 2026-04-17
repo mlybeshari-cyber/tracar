@@ -11,7 +11,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import MapView from '../map/core/MapView';
 import MapRoutePath from '../map/MapRoutePath';
-import MapRoutePoints from '../map/MapRoutePoints';
 import MapPositions from '../map/MapPositions';
 import { formatTime } from '../common/util/formatter';
 import ReportFilter, { updateReportParams } from '../reports/components/ReportFilter';
@@ -130,13 +129,6 @@ const ReplayPage = () => {
     }
   }, [index, positions]);
 
-  const onPointClick = useCallback(
-    (_, index) => {
-      setIndex(index);
-    },
-    [setIndex],
-  );
-
   const onMarkerClick = useCallback(
     (positionId) => {
       setShowCard(!!positionId);
@@ -173,7 +165,6 @@ const ReplayPage = () => {
         <MapOverlay />
         <MapGeofence />
         <MapRoutePath positions={positions} />
-        <MapRoutePoints positions={positions} onClick={onPointClick} showSpeedControl />
         {index < positions.length && (
           <MapPositions
             positions={[positions[index]]}
