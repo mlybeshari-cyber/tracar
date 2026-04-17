@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
@@ -79,6 +79,34 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [removing, setRemoving] = useState(false);
+  const [todayDistance, setTodayDistance] = useState(null);
+
+  useEffect(() => {
+    if (!deviceId) return;
+    const fetchTodayDistance = async () => {
+      try {
+        const now = new Date();
+        const startOfDay = new Date(now);
+        startOfDay.setHours(0, 0, 0, 0);
+        const from = startOfDay.toISOString();
+        const to = now.toISOString();
+        const response = await fetch(
+          `/api/reports/summary?deviceId=${deviceId}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            setTodayDistance(data[0].distance);
+          } else {
+            setTodayDistance(0);
+          }
+        }
+      } catch {
+        setTodayDistance(0);
+      }
+    };
+    fetchTodayDistance();
+  }, [deviceId]);
 
   const handleRemove = useCatch(async (removed) => {
     if (removed) {
@@ -112,18 +140,40 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   }
 
   const uiStatus = getDeviceUiStatus(device, position);
-  const isOnline = uiStatus !== 'offline';
   const lastSeen = device.lastUpdate ? formatTime(device.lastUpdate, 'datetime') : '--';
 
   const address =
     position?.address ||
     (position ? `${position.latitude.toFixed(5)}°, ${position.longitude.toFixed(5)}°` : '--');
 
-  const distanceRaw = position?.attributes?.distance;
   const distanceFormatted =
-    distanceRaw != null
-      ? `${distanceFromMeters(distanceRaw, distanceUnit).toFixed(2)} ${distanceUnitString(distanceUnit, t)}`
-      : `0 ${distanceUnitString(distanceUnit, t)}`;
+    todayDistance != null
+      ? `${distanceFromMeters(todayDistance, distanceUnit).toFixed(2)} ${distanceUnitString(distanceUnit, t)}`
+      : `0.00 ${distanceUnitString(distanceUnit, t)}`;
+
+  const statusCircleColor = {
+    moving: 'success.main',
+    idle: 'info.main',
+    parking: 'error.main',
+    pending: 'warning.main',
+    offline: 'grey.600',
+  }[uiStatus] || 'grey.600';
+
+  const statusLabel = {
+    moving: 'Moving',
+    idle: 'Idle',
+    parking: 'Parked',
+    pending: 'Pending',
+    offline: 'Offline',
+  }[uiStatus] || 'Offline';
+
+  const statusLabelColor = {
+    moving: 'success.main',
+    idle: 'info.main',
+    parking: 'error.main',
+    pending: 'warning.main',
+    offline: 'text.secondary',
+  }[uiStatus] || 'text.secondary';
 
   const cardContent = (
     <CardContent sx={{ p: 2 }}>
@@ -133,7 +183,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
             width: 40,
             height: 40,
             borderRadius: '50%',
-            bgcolor: 'grey.900',
+            bgcolor: statusCircleColor,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -158,9 +208,9 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
           <Typography
             variant="body2"
             fontWeight="bold"
-            color={isOnline ? 'success.main' : 'error.main'}
+            color={statusLabelColor}
           >
-            {isOnline ? t('deviceStatusOnline') : t('deviceStatusOffline')}
+            {statusLabel}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {lastSeen}
@@ -190,7 +240,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
             startIcon={<ShareIcon />}
             onClick={() => navigate(`/settings/device/${deviceId}/share`)}
             disabled={disableActions}
-            sx={{ flex: 1, bgcolor: 'primary.main', textTransform: 'none' }}
+            sx={{ flex: 1, bgcolor: '#3F51B5', textTransform: 'none', '&:hover': { bgcolor: '#303F9F' } }}
           >
             {t('deviceShare')}
           </Button>
@@ -203,9 +253,9 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
           disabled={disableActions || !position}
           sx={{
             flex: 1,
-            bgcolor: 'warning.main',
+            bgcolor: '#F57C00',
             textTransform: 'none',
-            '&:hover': { bgcolor: 'warning.dark' },
+            '&:hover': { bgcolor: '#E65100' },
           }}
         >
           {t('reportTrips')}
@@ -224,9 +274,9 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
           disabled={!position}
           sx={{
             flex: 1,
-            bgcolor: 'success.main',
+            bgcolor: '#388E3C',
             textTransform: 'none',
-            '&:hover': { bgcolor: 'success.dark' },
+            '&:hover': { bgcolor: '#2E7D32' },
           }}
         >
           {t('sharedDirections')}
