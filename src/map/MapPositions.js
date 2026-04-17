@@ -132,15 +132,15 @@ const MapPositions = ({
           'text-offset': [0, -2 * iconScale],
           'text-font': findFonts(map),
           'text-size': 12,
-          'text-padding': 4,
           'symbol-sort-key': ['get', 'id'],
+          'text-padding': 4,
         },
         paint: {
-          'text-background-color': 'rgba(255, 255, 255, 0.82)',
-          'text-background-opacity': 1,
           'text-color': '#222222',
           'text-halo-color': 'rgba(255, 255, 255, 0)',
           'text-halo-width': 0,
+          'text-background-color': 'rgba(255, 255, 255, 0.82)',
+          'text-background-opacity': 1,
         },
       });
       map.addLayer({
