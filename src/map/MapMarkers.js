@@ -39,8 +39,9 @@ const MapMarkers = ({ markers, showTitles }) => {
           'text-size': 12,
         },
         paint: {
-          'text-halo-color': 'white',
-          'text-halo-width': 1,
+          'text-color': 'rgba(60, 60, 60, 0.75)',
+          'text-halo-color': 'rgba(255, 255, 255, 0.85)',
+          'text-halo-width': 1.5,
         },
       });
     } else {
