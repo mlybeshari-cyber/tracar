@@ -30,6 +30,7 @@ import { useCatch, useCatchCallback } from '../../reactHelper';
 import { useAttributePreference } from '../util/preferences';
 import fetchOrThrow from '../util/fetchOrThrow';
 import { getDeviceUiStatus, formatTime } from '../util/formatter';
+import { distanceFromMeters, distanceUnitString } from '../util/converter';
 
 const useStyles = makeStyles()((theme, { desktopPadding }) => ({
   desktopRoot: {
@@ -74,6 +75,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
 
   const navigationAppLink = useAttributePreference('navigationAppLink');
   const navigationAppTitle = useAttributePreference('navigationAppTitle');
+  const distanceUnit = useAttributePreference('distanceUnit', 'km');
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [removing, setRemoving] = useState(false);
@@ -118,7 +120,10 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
     (position ? `${position.latitude.toFixed(5)}°, ${position.longitude.toFixed(5)}°` : '--');
 
   const distanceRaw = position?.attributes?.distance;
-  const distanceKm = distanceRaw != null ? (distanceRaw / 1000).toFixed(2) : '0';
+  const distanceFormatted =
+    distanceRaw != null
+      ? `${distanceFromMeters(distanceRaw, distanceUnit).toFixed(2)} ${distanceUnitString(distanceUnit, t)}`
+      : `0 ${distanceUnitString(distanceUnit, t)}`;
 
   const cardContent = (
     <CardContent sx={{ p: 2 }}>
@@ -155,7 +160,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
             fontWeight="bold"
             color={isOnline ? 'success.main' : 'error.main'}
           >
-            {isOnline ? 'Online' : 'Offline'}
+            {isOnline ? t('deviceStatusOnline') : t('deviceStatusOffline')}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {lastSeen}
@@ -172,7 +177,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <RouteIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5, flexShrink: 0 }} />
           <Typography variant="body2" color="text.secondary">
-            {`${distanceKm} km today`}
+            {`${distanceFormatted} ${t('reportToday').toLowerCase()}`}
           </Typography>
         </Box>
       </Box>
@@ -187,7 +192,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
             disabled={disableActions}
             sx={{ flex: 1, bgcolor: 'primary.main', textTransform: 'none' }}
           >
-            Share
+            {t('deviceShare')}
           </Button>
         )}
         <Button
@@ -203,7 +208,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
             '&:hover': { bgcolor: 'warning.dark' },
           }}
         >
-          Trips
+          {t('reportTrips')}
         </Button>
         <Button
           variant="contained"
@@ -224,7 +229,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
             '&:hover': { bgcolor: 'success.dark' },
           }}
         >
-          Directions
+          {t('sharedDirections')}
         </Button>
       </Box>
     </CardContent>
