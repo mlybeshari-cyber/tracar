@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { Rnd } from 'react-rnd';
@@ -8,26 +9,34 @@ import {
   Box,
   Card,
   CardContent,
+  CardMedia,
   Typography,
   Button,
   IconButton,
   Menu,
   MenuItem,
+  Tooltip,
+  Link,
 } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import CloseIcon from '@mui/icons-material/Close';
 import RouteIcon from '@mui/icons-material/Route';
 import ShareIcon from '@mui/icons-material/Share';
 import NavigationIcon from '@mui/icons-material/Navigation';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import PendingIcon from '@mui/icons-material/Pending';
+import SendIcon from '@mui/icons-material/Send';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import { useTranslation } from './LocalizationProvider';
 import RemoveDialog from './RemoveDialog';
-import { useRestriction } from '../util/permissions';
+import PositionValue from './PositionValue';
+import { useRestriction, useDeviceReadonly } from '../util/permissions';
 import { devicesActions } from '../../store';
 import { useCatch, useCatchCallback } from '../../reactHelper';
 import { useAttributePreference } from '../util/preferences';
+import usePositionAttributes from '../attributes/usePositionAttributes';
 import fetchOrThrow from '../util/fetchOrThrow';
 import { getDeviceUiStatus, formatTime } from '../util/formatter';
 import { distanceFromMeters, distanceUnitString } from '../util/converter';
@@ -68,6 +77,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   const desktop = useMediaQuery(theme.breakpoints.up('md'));
 
   const readonly = useRestriction('readonly');
+  const deviceReadonly = useDeviceReadonly();
 
   const shareDisabled = useSelector((state) => state.session.server.attributes.disableShare);
   const user = useSelector((state) => state.session.user);
@@ -76,6 +86,11 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   const navigationAppLink = useAttributePreference('navigationAppLink');
   const navigationAppTitle = useAttributePreference('navigationAppTitle');
   const distanceUnit = useAttributePreference('distanceUnit', 'km');
+  const positionItems = useAttributePreference(
+    'positionItems',
+    'fixTime,address,speed,totalDistance',
+  );
+  const positionAttributes = usePositionAttributes(t);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [removing, setRemoving] = useState(false);
@@ -142,9 +157,7 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   const uiStatus = getDeviceUiStatus(device, position);
   const lastSeen = device.lastUpdate ? formatTime(device.lastUpdate, 'datetime') : '--';
 
-  const address =
-    position?.address ||
-    (position ? `${position.latitude.toFixed(5)}°, ${position.longitude.toFixed(5)}°` : '--');
+  const deviceImage = device?.attributes?.deviceImage;
 
   const distanceFormatted =
     todayDistance != null
@@ -176,113 +189,221 @@ const StatusCard = ({ deviceId, position, onClose, disableActions, desktopPaddin
   }[uiStatus] || 'text.secondary';
 
   const cardContent = (
-    <CardContent sx={{ p: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            bgcolor: statusCircleColor,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mr: 1.5,
-            flexShrink: 0,
-          }}
-        >
-          <FiberManualRecordIcon sx={{ color: 'white', fontSize: 20 }} />
-        </Box>
-        <Typography variant="h6" fontWeight="bold" sx={{ flex: 1, minWidth: 0 }} noWrap>
-          {device.name}
-        </Typography>
-        <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </Box>
-
-      <Box sx={{ bgcolor: 'grey.100', borderRadius: 2, p: 1.5, mb: 1.5 }}>
-        <Box
-          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}
-        >
-          <Typography
-            variant="body2"
-            fontWeight="bold"
-            color={statusLabelColor}
-          >
-            {statusLabel}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {lastSeen}
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 0.5 }}>
-          <LocationOnIcon
-            sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5, mt: 0.2, flexShrink: 0 }}
+    <>
+      {deviceImage && (
+        <Box sx={{ position: 'relative' }}>
+          <CardMedia
+            image={`/api/media/${device.uniqueId}/${deviceImage}`}
+            sx={{ height: 140 }}
           />
-          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
-            {address}
-          </Typography>
+          <IconButton
+            size="small"
+            onClick={onClose}
+            onTouchStart={onClose}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              color: 'white',
+              mixBlendMode: 'difference',
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <RouteIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5, flexShrink: 0 }} />
-          <Typography variant="body2" color="text.secondary">
-            {`${distanceFormatted} ${t('reportToday').toLowerCase()}`}
-          </Typography>
-        </Box>
-      </Box>
+      )}
+      <CardContent sx={{ p: 2 }}>
+        {!deviceImage && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                bgcolor: statusCircleColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mr: 1.5,
+                flexShrink: 0,
+              }}
+            >
+              <FiberManualRecordIcon sx={{ color: 'white', fontSize: 20 }} />
+            </Box>
+            <Typography variant="h6" fontWeight="bold" sx={{ flex: 1, minWidth: 0 }} noWrap>
+              {device.name}
+            </Typography>
+            <IconButton size="small" onClick={onClose} onTouchStart={onClose}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        )}
 
-      <Box sx={{ display: 'flex', gap: 1 }}>
-        {!shareDisabled && !user.temporary && (
+        <Box sx={{ bgcolor: 'grey.100', borderRadius: 2, p: 1.5, mb: 1.5 }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}
+          >
+            <Typography variant="body2" fontWeight="bold" color={statusLabelColor}>
+              {statusLabel}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {lastSeen}
+            </Typography>
+          </Box>
+
+          {position && positionItems.split(',').map((key) => {
+            const posAttr = positionAttributes[key];
+            const isProperty = !!posAttr?.property;
+            const value = isProperty ? position[key] : position?.attributes?.[key];
+            if (key !== 'address' && (value === undefined || value === null)) return null;
+            return (
+              <Box
+                key={key}
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  mb: 0.5,
+                }}
+              >
+                <Typography variant="caption" color="text.secondary" sx={{ mr: 1, flexShrink: 0 }}>
+                  {posAttr?.name || key}
+                </Typography>
+                <Typography variant="body2" component="span" sx={{ textAlign: 'right' }}>
+                  <PositionValue
+                    position={position}
+                    property={isProperty ? key : undefined}
+                    attribute={isProperty ? undefined : key}
+                  />
+                </Typography>
+              </Box>
+            );
+          })}
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+            <Typography variant="caption" color="text.secondary">
+              <RouteIcon sx={{ fontSize: 14, verticalAlign: 'middle', mr: 0.5 }} />
+              {t('reportToday')}
+            </Typography>
+            <Typography variant="body2">
+              {distanceFormatted}
+            </Typography>
+          </Box>
+
+          {position && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
+              <Link component={RouterLink} to={`/position/${position.id}`} underline="hover" variant="caption">
+                {t('sharedShowDetails')}
+              </Link>
+            </Box>
+          )}
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {!shareDisabled && !user.temporary && (
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<ShareIcon />}
+              onClick={() => navigate(`/settings/device/${deviceId}/share`)}
+              disabled={disableActions}
+              sx={{ flex: 1, bgcolor: '#3F51B5', textTransform: 'none', '&:hover': { bgcolor: '#303F9F' } }}
+            >
+              {t('deviceShare')}
+            </Button>
+          )}
           <Button
             variant="contained"
             size="small"
-            startIcon={<ShareIcon />}
-            onClick={() => navigate(`/settings/device/${deviceId}/share`)}
-            disabled={disableActions}
-            sx={{ flex: 1, bgcolor: '#3F51B5', textTransform: 'none', '&:hover': { bgcolor: '#303F9F' } }}
+            startIcon={<RouteIcon />}
+            onClick={() => navigate(`/replay?deviceId=${deviceId}`)}
+            disabled={disableActions || !position}
+            sx={{
+              flex: 1,
+              bgcolor: '#F57C00',
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#E65100' },
+            }}
           >
-            {t('deviceShare')}
+            {t('reportTrips')}
           </Button>
-        )}
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<RouteIcon />}
-          onClick={() => navigate(`/replay?deviceId=${deviceId}`)}
-          disabled={disableActions || !position}
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<NavigationIcon />}
+            onClick={() =>
+              position &&
+              window.open(
+                `https://www.google.com/maps/dir/?api=1&destination=${position.latitude},${position.longitude}`,
+                '_blank',
+              )
+            }
+            disabled={!position}
+            sx={{
+              flex: 1,
+              bgcolor: '#388E3C',
+              textTransform: 'none',
+              '&:hover': { bgcolor: '#2E7D32' },
+            }}
+          >
+            {t('sharedDirections')}
+          </Button>
+        </Box>
+
+        <Box
           sx={{
-            flex: 1,
-            bgcolor: '#F57C00',
-            textTransform: 'none',
-            '&:hover': { bgcolor: '#E65100' },
+            display: 'flex',
+            justifyContent: 'space-around',
+            mt: 1,
+            pt: 1,
+            borderTop: 1,
+            borderColor: 'divider',
           }}
         >
-          {t('reportTrips')}
-        </Button>
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<NavigationIcon />}
-          onClick={() =>
-            position &&
-            window.open(
-              `https://www.google.com/maps/dir/?api=1&destination=${position.latitude},${position.longitude}`,
-              '_blank',
-            )
-          }
-          disabled={!position}
-          sx={{
-            flex: 1,
-            bgcolor: '#388E3C',
-            textTransform: 'none',
-            '&:hover': { bgcolor: '#2E7D32' },
-          }}
-        >
-          {t('sharedDirections')}
-        </Button>
-      </Box>
-    </CardContent>
+          <Tooltip title={t('sharedExtra')}>
+            <span>
+              <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)} disabled={!position}>
+                <PendingIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title={t('commandTitle')}>
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => navigate(`/settings/device/${deviceId}/command`)}
+                disabled={disableActions}
+              >
+                <SendIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title={t('sharedEdit')}>
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => navigate(`/settings/device/${deviceId}`)}
+                disabled={disableActions || deviceReadonly}
+              >
+                <EditIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title={t('sharedRemove')}>
+            <span>
+              <IconButton
+                size="small"
+                onClick={() => setRemoving(true)}
+                disabled={disableActions || deviceReadonly}
+                color="error"
+              >
+                <DeleteIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
+      </CardContent>
+    </>
   );
 
   return (
