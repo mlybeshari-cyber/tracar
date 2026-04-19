@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Paper } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import { useTheme } from '@mui/material/styles';
@@ -6,8 +6,10 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useDispatch, useSelector } from 'react-redux';
 import DeviceList from './DeviceList';
 import StatusCard from '../common/components/StatusCard';
+import BottomMenu from '../common/components/BottomMenu';
 import { devicesActions } from '../store';
 import usePersistedState from '../common/util/usePersistedState';
+import usePersistentResize from '../common/util/usePersistentResize';
 import EventsDrawer from './EventsDrawer';
 import useFilter from './useFilter';
 import MainToolbar from './MainToolbar';
@@ -27,7 +29,6 @@ const useStyles = makeStyles()((theme) => ({
       left: 0,
       top: 0,
       height: `calc(100% - ${theme.spacing(3)})`,
-      width: theme.dimensions.drawerWidthDesktop,
       margin: theme.spacing(1.5),
       zIndex: 3,
     },
@@ -56,6 +57,33 @@ const useStyles = makeStyles()((theme) => ({
     display: 'flex',
     minHeight: 0,
   },
+  footer: {
+    pointerEvents: 'auto',
+    zIndex: 6,
+    flexShrink: 0,
+  },
+  resizeHandleX: {
+    position: 'absolute',
+    top: 0,
+    right: -3,
+    bottom: 0,
+    width: 6,
+    cursor: 'ew-resize',
+    zIndex: 10,
+    pointerEvents: 'auto',
+    '&:hover': {
+      backgroundColor: 'rgba(0,0,0,0.1)',
+    },
+  },
+  resizeHandleY: {
+    height: 6,
+    flexShrink: 0,
+    cursor: 'ns-resize',
+    pointerEvents: 'auto',
+    '&:hover': {
+      backgroundColor: 'rgba(0,0,0,0.1)',
+    },
+  },
 }));
 
 const MainPage = () => {
@@ -64,6 +92,34 @@ const MainPage = () => {
   const theme = useTheme();
 
   const desktop = useMediaQuery(theme.breakpoints.up('md'));
+
+  const defaultPanelWidth = parseInt(theme.dimensions.drawerWidthDesktop, 10);
+  const maxListHeight = Math.round(window.innerHeight * 0.8);
+
+  const [panelWidth, startResizeWidth] = usePersistentResize(
+    'devicesPanelWidth',
+    defaultPanelWidth,
+    240,
+    600,
+    'x',
+  );
+  const [listHeight, startResizeHeight] = usePersistentResize(
+    'devicesPanelListHeight',
+    null,
+    150,
+    maxListHeight,
+    'y',
+  );
+
+  const middleRef = useRef(null);
+
+  const handleHeightMouseDown = useCallback(
+    (e) => {
+      const currentHeight = listHeight ?? middleRef.current?.clientHeight ?? 400;
+      startResizeHeight(e, currentHeight);
+    },
+    [listHeight, startResizeHeight],
+  );
 
   const mapOnSelect = useAttributePreference('mapOnSelect', true);
 
@@ -112,9 +168,13 @@ const MainPage = () => {
           filteredPositions={filteredPositions}
           selectedPosition={selectedPosition}
           onEventsClick={onEventsClick}
+          sidebarWidth={panelWidth}
         />
       )}
-      <div className={classes.sidebar}>
+      <div
+        className={classes.sidebar}
+        style={desktop ? { width: panelWidth } : undefined}
+      >
         <Paper square elevation={3} className={classes.header}>
           <MainToolbar
             filteredDevices={filteredDevices}
@@ -130,7 +190,15 @@ const MainPage = () => {
             setFilterMap={setFilterMap}
           />
         </Paper>
-        <div className={classes.middle}>
+        <div
+          ref={middleRef}
+          className={classes.middle}
+          style={
+            desktop && listHeight !== null
+              ? { flex: 'none', height: listHeight }
+              : undefined
+          }
+        >
           {!desktop && (
             <div className={classes.contentMap}>
               <MainMap
@@ -148,6 +216,15 @@ const MainPage = () => {
             <DeviceList devices={filteredDevices} />
           </Paper>
         </div>
+        {desktop && (
+          <div className={classes.resizeHandleY} onMouseDown={handleHeightMouseDown} />
+        )}
+        <div className={classes.footer}>
+          <BottomMenu />
+        </div>
+        {desktop && (
+          <div className={classes.resizeHandleX} onMouseDown={startResizeWidth} />
+        )}
       </div>
       <EventsDrawer open={eventsOpen} onClose={() => setEventsOpen(false)} />
       {selectedDeviceId && (
@@ -155,7 +232,7 @@ const MainPage = () => {
           deviceId={selectedDeviceId}
           position={selectedPosition}
           onClose={() => dispatch(devicesActions.selectId(null))}
-          desktopPadding={theme.dimensions.drawerWidthDesktop}
+          desktopPadding={desktop ? panelWidth : theme.dimensions.drawerWidthDesktop}
         />
       )}
     </div>
