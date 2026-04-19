@@ -147,7 +147,7 @@ const MapPositions = ({
           'text-field': ['get', 'badge'],
           'text-font': findFonts(map),
           'text-size': 10,
-          'text-offset': [0, -1.6 * iconScale],
+          'text-offset': [0, -2.6 * iconScale],
           'text-anchor': 'bottom',
           'text-allow-overlap': true,
           'text-padding': 2,
