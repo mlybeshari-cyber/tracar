@@ -104,7 +104,7 @@ export const geofenceToFeature = (theme, item) => {
 export const geometryToArea = (geometry) => stringify(reverseCoordinates(geometry));
 
 export const prepareStatusMarker = (color, glyph) => {
-  const size = 48;
+  const size = 40;
   const dpr = window.devicePixelRatio || 1;
   const canvas = document.createElement('canvas');
   canvas.width = size * dpr;
@@ -118,6 +118,7 @@ export const prepareStatusMarker = (color, glyph) => {
   const innerR = cx * 0.80;
   const r = innerR + 1.5 * dpr;
 
+  // White outer ring with soft shadow
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.25)';
   ctx.shadowBlur = 4 * dpr;
@@ -128,33 +129,50 @@ export const prepareStatusMarker = (color, glyph) => {
   ctx.fill();
   ctx.restore();
 
+  // Inner colored disc
   ctx.beginPath();
   ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.fill();
 
+  // Glyph
   ctx.fillStyle = '#ffffff';
+
   if (glyph === 'arrow') {
-    const arrowH = innerR * 0.72;
-    const arrowW = innerR * 0.55;
+    // MUI NavigationIcon path inside a 24x24 viewBox:
+    // M12 2 L4.5 20.29 L5.21 21 L12 18 L18.79 21 L19.5 20.29 Z
+    const target = innerR * 1.4;
+    const scale = target / 24;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    ctx.translate(-12, -11.5);              // SVG y-range is [2,21]; visual centroid ~11.5, slightly above geometric midpoint 11
     ctx.beginPath();
-    ctx.moveTo(cx, cy - arrowH * 0.55);
-    ctx.lineTo(cx - arrowW / 2, cy + arrowH * 0.45);
-    ctx.lineTo(cx + arrowW / 2, cy + arrowH * 0.45);
+    ctx.moveTo(12, 2);
+    ctx.lineTo(4.5, 20.29);
+    ctx.lineTo(5.21, 21);
+    ctx.lineTo(12, 18);
+    ctx.lineTo(18.79, 21);
+    ctx.lineTo(19.5, 20.29);
     ctx.closePath();
     ctx.fill();
+    ctx.restore();
   } else if (glyph === 'pause') {
-    const barW = innerR * 0.2;
-    const barH = innerR * 0.65;
-    const barGap = innerR * 0.13;
-    ctx.fillRect(cx - barGap - barW, cy - barH / 2, barW, barH);
-    ctx.fillRect(cx + barGap, cy - barH / 2, barW, barH);
+    // Two vertical bars, slightly dropped for optical centering
+    const barW = innerR * 0.22;
+    const barH = innerR * 0.62;
+    const barGap = innerR * 0.14;
+    const yBias = 1 * dpr;
+    ctx.fillRect(cx - barGap - barW, cy - barH / 2 + yBias, barW, barH);
+    ctx.fillRect(cx + barGap, cy - barH / 2 + yBias, barW, barH);
   } else {
-    const fontSize = Math.round(size * dpr * 0.42);
+    // Letter / symbol glyphs (P, ?, ×) — bold, sans-serif, slight downward bias
+    const fontSize = Math.round(size * dpr * 0.46);
     ctx.font = `bold ${fontSize}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(glyph, cx, cy);
+    const yBias = 1 * dpr;
+    ctx.fillText(glyph, cx, cy + yBias);
   }
 
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
