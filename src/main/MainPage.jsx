@@ -295,7 +295,7 @@ const MainPage = () => {
           deviceId={selectedDeviceId}
           position={selectedPosition}
           onClose={() => dispatch(devicesActions.selectId(null))}
-          desktopPadding={desktop ? panelWidth : 0}
+          desktopPadding={desktop ? `${panelWidth}px` : 0}
         />
       )}
     </div>
