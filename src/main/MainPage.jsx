@@ -282,9 +282,11 @@ const MainPage = () => {
         {desktop && (
           <div className={classes.resizeHandleY} onMouseDown={handleHeightMouseDown} />
         )}
-        <div className={classes.footer}>
-          <BottomMenu />
-        </div>
+        {desktop && (
+          <div className={classes.footer}>
+            <BottomMenu />
+          </div>
+        )}
         {desktop && (
           <div className={classes.resizeHandleX} onMouseDown={startResizeWidth} />
         )}
