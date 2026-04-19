@@ -119,7 +119,7 @@ export default async () => {
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
   ctx.beginPath();
   ctx.moveTo(BADGE_BG_RADIUS, 0);
   ctx.lineTo(size - BADGE_BG_RADIUS, 0);

@@ -142,11 +142,11 @@ const MapPositions = ({
         layout: {
           'icon-image': 'badge-bg',
           'icon-text-fit': 'both',
-          'icon-text-fit-padding': [4, 8, 4, 8],
+          'icon-text-fit-padding': [2, 6, 2, 6],
           'icon-allow-overlap': true,
           'text-field': ['get', 'badge'],
           'text-font': findFonts(map),
-          'text-size': 11,
+          'text-size': 10,
           'text-offset': [0, -1.6 * iconScale],
           'text-anchor': 'bottom',
           'text-allow-overlap': true,
