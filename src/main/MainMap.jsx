@@ -19,7 +19,7 @@ import MapScale from '../map/MapScale';
 import MapNotification from '../map/notification/MapNotification';
 import useFeatures from '../common/util/useFeatures';
 
-const MainMap = ({ filteredPositions, selectedPosition, onEventsClick }) => {
+const MainMap = ({ filteredPositions, selectedPosition, onEventsClick, sidebarWidth }) => {
   const theme = useTheme();
   const dispatch = useDispatch();
 
@@ -62,7 +62,8 @@ const MainMap = ({ filteredPositions, selectedPosition, onEventsClick }) => {
       {desktop && (
         <MapPadding
           start={
-            parseInt(theme.dimensions.drawerWidthDesktop, 10) + parseInt(theme.spacing(1.5), 10)
+            (sidebarWidth ?? parseInt(theme.dimensions.drawerWidthDesktop, 10)) +
+            parseInt(theme.spacing(1.5), 10)
           }
         />
       )}
