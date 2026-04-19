@@ -6,7 +6,7 @@ import { useTheme } from '@mui/material';
 import { SwitcherControl } from '../switcher/switcher';
 import { useAttributePreference, usePreference } from '../../common/util/preferences';
 import usePersistedState, { savePersistedState } from '../../common/util/usePersistedState';
-import { mapImages } from './preloadImages';
+import { mapImages, BADGE_BG_SIZE, BADGE_BG_RADIUS } from './preloadImages';
 import useMapStyles from './useMapStyles';
 import { useEffectAsync } from '../../reactHelper';
 
@@ -43,9 +43,18 @@ const initMap = async () => {
   if (ready) return;
   if (!map.hasImage('background')) {
     Object.entries(mapImages).forEach(([key, value]) => {
-      map.addImage(key, value, {
-        pixelRatio: window.devicePixelRatio,
-      });
+      if (key === 'badge-bg') {
+        map.addImage(key, value, {
+          stretchX: [[BADGE_BG_RADIUS, BADGE_BG_SIZE - BADGE_BG_RADIUS]],
+          stretchY: [[BADGE_BG_RADIUS, BADGE_BG_SIZE - BADGE_BG_RADIUS]],
+          content: [BADGE_BG_RADIUS / 2, BADGE_BG_RADIUS / 2, BADGE_BG_SIZE - BADGE_BG_RADIUS / 2, BADGE_BG_SIZE - BADGE_BG_RADIUS / 2],
+          pixelRatio: 1,
+        });
+      } else {
+        map.addImage(key, value, {
+          pixelRatio: window.devicePixelRatio,
+        });
+      }
     });
   }
 };

@@ -66,6 +66,9 @@ export const mapIconKey = (category) => {
 
 export const mapImages = {};
 
+export const BADGE_BG_SIZE = 24;
+export const BADGE_BG_RADIUS = 8;
+
 const theme = createTheme({
   palette: {
     neutral: { main: grey[500] },
@@ -111,4 +114,23 @@ export default async () => {
   Object.keys(statusGlyphs).forEach((status) => {
     mapImages[`marker-${status}`] = prepareStatusMarker(STATUS_COLORS[status], statusGlyphs[status]);
   });
+  const size = BADGE_BG_SIZE;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+  ctx.beginPath();
+  ctx.moveTo(BADGE_BG_RADIUS, 0);
+  ctx.lineTo(size - BADGE_BG_RADIUS, 0);
+  ctx.quadraticCurveTo(size, 0, size, BADGE_BG_RADIUS);
+  ctx.lineTo(size, size - BADGE_BG_RADIUS);
+  ctx.quadraticCurveTo(size, size, size - BADGE_BG_RADIUS, size);
+  ctx.lineTo(BADGE_BG_RADIUS, size);
+  ctx.quadraticCurveTo(0, size, 0, size - BADGE_BG_RADIUS);
+  ctx.lineTo(0, BADGE_BG_RADIUS);
+  ctx.quadraticCurveTo(0, 0, BADGE_BG_RADIUS, 0);
+  ctx.closePath();
+  ctx.fill();
+  mapImages['badge-bg'] = ctx.getImageData(0, 0, size, size);
 };

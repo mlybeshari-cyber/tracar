@@ -140,6 +140,10 @@ const MapPositions = ({
         source,
         filter: ['all', ['!has', 'point_count'], ['!=', 'badge', '']],
         layout: {
+          'icon-image': 'badge-bg',
+          'icon-text-fit': 'both',
+          'icon-text-fit-padding': [4, 8, 4, 8],
+          'icon-allow-overlap': true,
           'text-field': ['get', 'badge'],
           'text-font': findFonts(map),
           'text-size': 11,
@@ -150,9 +154,6 @@ const MapPositions = ({
         },
         paint: {
           'text-color': '#ffffff',
-          'text-halo-color': 'rgba(0,0,0,0.85)',
-          'text-halo-width': 3,
-          'text-halo-blur': 0.5,
         },
       });
       map.addLayer({
