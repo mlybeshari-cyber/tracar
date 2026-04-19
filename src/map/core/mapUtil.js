@@ -103,6 +103,63 @@ export const geofenceToFeature = (theme, item) => {
 
 export const geometryToArea = (geometry) => stringify(reverseCoordinates(geometry));
 
+export const prepareStatusMarker = (color, glyph) => {
+  const size = 48;
+  const dpr = window.devicePixelRatio || 1;
+  const canvas = document.createElement('canvas');
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = `${size}px`;
+  canvas.style.height = `${size}px`;
+
+  const ctx = canvas.getContext('2d');
+  const cx = (size * dpr) / 2;
+  const cy = (size * dpr) / 2;
+  const r = ((size * dpr) / 2) * 0.83;
+  const innerR = r * 0.9;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.25)';
+  ctx.shadowBlur = 2 * dpr;
+  ctx.shadowOffsetY = 1 * dpr;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  ctx.fillStyle = '#ffffff';
+  if (glyph === 'arrow') {
+    const arrowH = innerR * 0.72;
+    const arrowW = innerR * 0.55;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - arrowH * 0.55);
+    ctx.lineTo(cx - arrowW / 2, cy + arrowH * 0.45);
+    ctx.lineTo(cx + arrowW / 2, cy + arrowH * 0.45);
+    ctx.closePath();
+    ctx.fill();
+  } else if (glyph === 'pause') {
+    const barW = innerR * 0.2;
+    const barH = innerR * 0.65;
+    const barGap = innerR * 0.13;
+    ctx.fillRect(cx - barGap - barW, cy - barH / 2, barW, barH);
+    ctx.fillRect(cx + barGap, cy - barH / 2, barW, barH);
+  } else {
+    const fontSize = Math.round(innerR * 1.1);
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(glyph, cx, cy);
+  }
+
+  return ctx.getImageData(0, 0, canvas.width, canvas.height);
+};
+
 export const findFonts = (map) => {
   const { glyphs } = map.getStyle();
   if (glyphs.startsWith('https://tiles.openfreemap.org')) {

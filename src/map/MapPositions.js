@@ -3,8 +3,8 @@ import { useSelector } from 'react-redux';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { map } from './core/MapView';
-import { formatTime, getDeviceUiStatus, uiStatusToMapColor } from '../common/util/formatter';
-import { mapIconKey } from './core/preloadImages';
+import { formatTime, formatShortDuration, getDeviceUiStatus } from '../common/util/formatter';
+import { speedFromKnots } from '../common/util/converter';
 import { useAttributePreference } from '../common/util/preferences';
 import { useCatchCallback } from '../reactHelper';
 import { findFonts } from './core/mapUtil';
@@ -47,15 +47,26 @@ const MapPositions = ({
           (selectedPositionId === position.id || uiStatus === 'moving') && position.course > 0;
         break;
     }
+
+    let badge = '';
+    if (uiStatus === 'moving') {
+      badge = Math.round(speedFromKnots(position.speed || 0, 'kmh')).toString();
+    } else if (uiStatus === 'parking' || uiStatus === 'idle') {
+      badge = formatShortDuration(
+        position.fixTime ? Date.now() - new Date(position.fixTime).getTime() : 0,
+      );
+    }
+
     return {
       id: position.id,
       deviceId: position.deviceId,
       name: device.name,
       fixTime: formatTime(position.fixTime, 'seconds'),
-      category: mapIconKey(device.category),
-      color: showStatus ? position.attributes.color || uiStatusToMapColor(uiStatus) : 'neutral',
-      rotation: position.course,
+      markerImage: `marker-${uiStatus}`,
+      badge,
+      rotation: uiStatus === 'moving' ? position.course || 0 : 0,
       direction: showDirection,
+      uiStatus,
     };
   };
 
@@ -123,13 +134,15 @@ const MapPositions = ({
         source,
         filter: ['!has', 'point_count'],
         layout: {
-          'icon-image': '{category}-{color}',
+          'icon-image': ['get', 'markerImage'],
           'icon-size': iconScale,
           'icon-allow-overlap': true,
+          'icon-rotate': ['get', 'rotation'],
+          'icon-rotation-alignment': 'map',
           'text-field': `{${titleField || 'name'}}`,
           'text-allow-overlap': true,
-          'text-anchor': 'bottom',
-          'text-offset': [0, -2 * iconScale],
+          'text-anchor': 'top',
+          'text-offset': [0, 1.4 * iconScale],
           'text-font': findFonts(map),
           'text-size': 12,
           'symbol-sort-key': ['get', 'id'],
@@ -143,10 +156,31 @@ const MapPositions = ({
         },
       });
       map.addLayer({
+        id: `${source}-badge`,
+        type: 'symbol',
+        source,
+        filter: ['all', ['!has', 'point_count'], ['!=', ['get', 'badge'], '']],
+        layout: {
+          'text-field': ['get', 'badge'],
+          'text-font': findFonts(map),
+          'text-size': 11,
+          'text-offset': [0, -1.6 * iconScale],
+          'text-anchor': 'bottom',
+          'text-allow-overlap': true,
+          'text-padding': 2,
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-halo-color': 'rgba(0,0,0,0.85)',
+          'text-halo-width': 3,
+          'text-halo-blur': 0.5,
+        },
+      });
+      map.addLayer({
         id: `direction-${source}`,
         type: 'symbol',
         source,
-        filter: ['all', ['!has', 'point_count'], ['==', 'direction', true]],
+        filter: ['all', ['!has', 'point_count'], ['==', 'direction', true], ['!=', ['get', 'uiStatus'], 'moving']],
         layout: {
           'icon-image': 'direction',
           'icon-size': iconScale,
@@ -196,6 +230,9 @@ const MapPositions = ({
 
         if (map.getLayer(source)) {
           map.removeLayer(source);
+        }
+        if (map.getLayer(`${source}-badge`)) {
+          map.removeLayer(`${source}-badge`);
         }
         if (map.getLayer(`direction-${source}`)) {
           map.removeLayer(`direction-${source}`);
