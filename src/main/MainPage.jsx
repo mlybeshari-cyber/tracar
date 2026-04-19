@@ -86,6 +86,8 @@ const useStyles = makeStyles()((theme) => ({
   },
 }));
 
+const RESIZE_FALLBACK_HEIGHT = 400;
+
 const MainPage = () => {
   const { classes } = useStyles();
   const dispatch = useDispatch();
@@ -94,7 +96,13 @@ const MainPage = () => {
   const desktop = useMediaQuery(theme.breakpoints.up('md'));
 
   const defaultPanelWidth = parseInt(theme.dimensions.drawerWidthDesktop, 10);
-  const maxListHeight = Math.round(window.innerHeight * 0.8);
+  const [maxListHeight, setMaxListHeight] = useState(() => Math.round(window.innerHeight * 0.8));
+
+  useEffect(() => {
+    const handleWindowResize = () => setMaxListHeight(Math.round(window.innerHeight * 0.8));
+    window.addEventListener('resize', handleWindowResize);
+    return () => window.removeEventListener('resize', handleWindowResize);
+  }, []);
 
   const [panelWidth, startResizeWidth] = usePersistentResize(
     'devicesPanelWidth',
@@ -115,7 +123,7 @@ const MainPage = () => {
 
   const handleHeightMouseDown = useCallback(
     (e) => {
-      const currentHeight = listHeight ?? middleRef.current?.clientHeight ?? 400;
+      const currentHeight = listHeight ?? middleRef.current?.clientHeight ?? RESIZE_FALLBACK_HEIGHT;
       startResizeHeight(e, currentHeight);
     },
     [listHeight, startResizeHeight],
@@ -232,7 +240,7 @@ const MainPage = () => {
           deviceId={selectedDeviceId}
           position={selectedPosition}
           onClose={() => dispatch(devicesActions.selectId(null))}
-          desktopPadding={desktop ? panelWidth : theme.dimensions.drawerWidthDesktop}
+          desktopPadding={desktop ? panelWidth : 0}
         />
       )}
     </div>

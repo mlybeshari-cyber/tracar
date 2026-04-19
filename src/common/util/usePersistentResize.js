@@ -15,6 +15,13 @@ const usePersistentResize = (key, defaultValue, min, max, direction = 'x') => {
   const sizeRef = useRef(size);
   sizeRef.current = size;
 
+  // Keep refs for min/max so the drag handler always uses the latest bounds
+  // (e.g. max can change when window is resized)
+  const minRef = useRef(min);
+  const maxRef = useRef(max);
+  minRef.current = min;
+  maxRef.current = max;
+
   useEffect(() => {
     if (size !== null && size !== undefined) {
       localStorage.setItem(key, size.toString());
@@ -27,11 +34,15 @@ const usePersistentResize = (key, defaultValue, min, max, direction = 'x') => {
     (e, initialSize) => {
       e.preventDefault();
       const startPos = direction === 'x' ? e.clientX : e.clientY;
-      const startSize = initialSize !== undefined ? initialSize : (sizeRef.current ?? (min + max) / 2);
+      // Use provided initialSize, or the last known size, or fall back to midpoint of bounds
+      const startSize =
+        initialSize !== undefined
+          ? initialSize
+          : (sizeRef.current ?? (minRef.current + maxRef.current) / 2);
 
       const onMouseMove = (ev) => {
         const pos = direction === 'x' ? ev.clientX : ev.clientY;
-        setSize(Math.min(Math.max(startSize + pos - startPos, min), max));
+        setSize(Math.min(Math.max(startSize + pos - startPos, minRef.current), maxRef.current));
       };
 
       const onMouseUp = () => {
@@ -42,7 +53,7 @@ const usePersistentResize = (key, defaultValue, min, max, direction = 'x') => {
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
     },
-    [direction, min, max],
+    [direction],
   );
 
   return [size, startResize];
