@@ -138,7 +138,7 @@ const MapPositions = ({
         id: `${source}-badge`,
         type: 'symbol',
         source,
-        filter: ['all', ['!has', 'point_count'], ['!=', ['get', 'badge'], '']],
+        filter: ['all', ['!has', 'point_count'], ['!=', 'badge', '']],
         layout: {
           'text-field': ['get', 'badge'],
           'text-font': findFonts(map),
@@ -159,7 +159,7 @@ const MapPositions = ({
         id: `direction-${source}`,
         type: 'symbol',
         source,
-        filter: ['all', ['!has', 'point_count'], ['==', 'direction', true], ['!=', ['get', 'uiStatus'], 'moving']],
+        filter: ['all', ['!has', 'point_count'], ['==', 'direction', true], ['!=', 'uiStatus', 'moving']],
         layout: {
           'icon-image': 'direction',
           'icon-size': iconScale,
