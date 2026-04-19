@@ -3,8 +3,7 @@ import { useSelector } from 'react-redux';
 import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { map } from './core/MapView';
-import { formatTime, formatShortDuration, getDeviceUiStatus } from '../common/util/formatter';
-import { speedFromKnots } from '../common/util/converter';
+import { formatTime, getDeviceUiStatus } from '../common/util/formatter';
 import { useAttributePreference } from '../common/util/preferences';
 import { useCatchCallback } from '../reactHelper';
 import { findFonts } from './core/mapUtil';
@@ -48,14 +47,7 @@ const MapPositions = ({
         break;
     }
 
-    let badge = '';
-    if (uiStatus === 'moving') {
-      badge = Math.round(speedFromKnots(position.speed || 0, 'kmh')).toString();
-    } else if (uiStatus === 'parking' || uiStatus === 'idle') {
-      badge = formatShortDuration(
-        position.fixTime ? Date.now() - new Date(position.fixTime).getTime() : 0,
-      );
-    }
+    const badge = device.name;
 
     return {
       id: position.id,
@@ -139,20 +131,7 @@ const MapPositions = ({
           'icon-allow-overlap': true,
           'icon-rotate': ['get', 'rotation'],
           'icon-rotation-alignment': 'map',
-          'text-field': `{${titleField || 'name'}}`,
-          'text-allow-overlap': true,
-          'text-anchor': 'top',
-          'text-offset': [0, 1.4 * iconScale],
-          'text-font': findFonts(map),
-          'text-size': 12,
           'symbol-sort-key': ['get', 'id'],
-          'text-padding': 4,
-        },
-        paint: {
-          'text-color': '#ffffff',
-          'text-halo-color': 'rgba(0, 0, 0, 0.75)',
-          'text-halo-width': 1.5,
-          'text-halo-blur': 0.5,
         },
       });
       map.addLayer({
