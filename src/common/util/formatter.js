@@ -190,6 +190,18 @@ export const uiStatusToMapColor = (uiStatus) => {
   }
 };
 
+export const formatShortDuration = (ms) => {
+  if (!ms || ms < 0) return '';
+  const sec = Math.floor(ms / 1000);
+  if (sec < 60) return '1m';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h`;
+  const days = Math.floor(hr / 24);
+  return `${days}d`;
+};
+
 export const getBatteryStatus = (batteryLevel) => {
   if (batteryLevel >= 70) {
     return 'success';

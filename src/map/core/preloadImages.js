@@ -1,6 +1,6 @@
 import { grey } from '@mui/material/colors';
 import { createTheme } from '@mui/material';
-import { loadImage, prepareIcon } from './mapUtil';
+import { loadImage, prepareIcon, prepareStatusMarker } from './mapUtil';
 
 import directionSvg from '../../resources/images/direction.svg';
 import backgroundSvg from '../../resources/images/background.svg';
@@ -93,4 +93,21 @@ export default async () => {
       await Promise.all(results);
     }),
   );
+  const statusGlyphs = {
+    moving: 'arrow',
+    parking: 'P',
+    idle: 'pause',
+    pending: '?',
+    offline: '\u00d7',
+  };
+  const statusColors = {
+    moving: theme.palette.success.main,
+    parking: theme.palette.error.main,
+    idle: theme.palette.info.main,
+    pending: theme.palette.warning.main,
+    offline: theme.palette.neutral.main,
+  };
+  Object.keys(statusGlyphs).forEach((status) => {
+    mapImages[`marker-${status}`] = prepareStatusMarker(statusColors[status], statusGlyphs[status]);
+  });
 };
