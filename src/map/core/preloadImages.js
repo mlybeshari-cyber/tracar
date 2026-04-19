@@ -72,6 +72,14 @@ const theme = createTheme({
   },
 });
 
+const STATUS_COLORS = {
+  moving: '#2BBC8A',
+  parking: '#E74C3C',
+  idle: '#3498DB',
+  pending: '#F39C12',
+  offline: '#95A5A6',
+};
+
 export default async () => {
   const background = await loadImage(backgroundSvg);
   mapImages.background = await prepareIcon(background);
@@ -100,14 +108,7 @@ export default async () => {
     pending: '?',
     offline: '\u00d7',
   };
-  const statusColors = {
-    moving: theme.palette.success.main,
-    parking: theme.palette.error.main,
-    idle: theme.palette.info.main,
-    pending: theme.palette.warning.main,
-    offline: theme.palette.neutral.main,
-  };
   Object.keys(statusGlyphs).forEach((status) => {
-    mapImages[`marker-${status}`] = prepareStatusMarker(statusColors[status], statusGlyphs[status]);
+    mapImages[`marker-${status}`] = prepareStatusMarker(STATUS_COLORS[status], statusGlyphs[status]);
   });
 };
