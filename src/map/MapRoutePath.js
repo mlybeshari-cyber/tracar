@@ -104,10 +104,9 @@ const MapRoutePath = ({ positions }) => {
       },
       paint: {
         'text-color': '#ffffff',
-        'text-halo-color': 'rgba(0, 0, 0, 0)',
-        'text-halo-width': 0,
-        'text-background-color': 'rgba(0, 0, 0, 0.75)',
-        'text-background-opacity': 1,
+        'text-halo-color': 'rgba(0, 0, 0, 0.85)',
+        'text-halo-width': 1.5,
+        'text-halo-blur': 0.5,
       },
     });
 
