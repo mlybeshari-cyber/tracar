@@ -115,13 +115,13 @@ export const prepareStatusMarker = (color, glyph) => {
   const ctx = canvas.getContext('2d');
   const cx = (size * dpr) / 2;
   const cy = (size * dpr) / 2;
-  const r = ((size * dpr) / 2) * 0.83;
-  const innerR = r * 0.9;
+  const innerR = cx * 0.80;
+  const r = innerR + 1.5 * dpr;
 
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.25)';
-  ctx.shadowBlur = 2 * dpr;
-  ctx.shadowOffsetY = 1 * dpr;
+  ctx.shadowBlur = 4 * dpr;
+  ctx.shadowOffsetY = 1.5 * dpr;
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fillStyle = '#ffffff';
@@ -150,7 +150,7 @@ export const prepareStatusMarker = (color, glyph) => {
     ctx.fillRect(cx - barGap - barW, cy - barH / 2, barW, barH);
     ctx.fillRect(cx + barGap, cy - barH / 2, barW, barH);
   } else {
-    const fontSize = Math.round(innerR * 1.1);
+    const fontSize = Math.round(size * dpr * 0.42);
     ctx.font = `bold ${fontSize}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
